@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absensi & Sertifikat - Upaznet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { theme: { extend: { colors: { upazblue: '#2d3b8e', upazgreen: '#00a651' } } } }
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans p-4 md:p-8">
+
+    <div class="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-lg border-t-8 border-upazblue">
+        <div class="text-center mb-8">
+            <h1 class="text-2xl md:text-3xl font-bold text-upazblue mb-2">Absensi Kegiatan Webinar & Sertifikat</h1>
+            <p class="text-upazgreen font-semibold text-lg">ISP Industry Career Preparation</p>
+        </div>
+
+        <form id="absensiForm" class="space-y-6">
+            <!-- 1. Nama Lengkap -->
+            <div>
+                <label class="block font-semibold mb-1">1. Nama Lengkap (Untuk Sertifikat)</label>
+                <input type="text" id="nama" required class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-upazgreen focus:outline-none" oninput="capitalizeWords(this)">
+            </div>
+
+            <!-- 2. Email -->
+            <div>
+                <label class="block font-semibold mb-1">2. Alamat Email (Untuk Pengiriman Digital)</label>
+                <input type="email" id="email" required class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-upazgreen focus:outline-none">
+            </div>
+
+            <!-- 3. Asal Sekolah -->
+            <div>
+                <label class="block font-semibold mb-1">3. Asal Sekolah / Institusi</label>
+                <input type="text" id="sekolah" required class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-upazgreen focus:outline-none">
+            </div>
+
+            <!-- 4. Alamat Domisili -->
+            <div class="p-4 bg-gray-50 border rounded-lg">
+                <label class="block font-semibold mb-3 text-upazblue">4. Alamat Domisili</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <select id="provinsi" onchange="loadKota()" class="w-full border p-2 rounded-lg bg-white" required>
+                        <option value="">Pilih Provinsi...</option>
+                    </select>
+                    <select id="kota" onchange="loadKecamatan()" class="w-full border p-2 rounded-lg bg-white" disabled required>
+                        <option value="">Pilih Kota/Kabupaten...</option>
+                    </select>
+                    <select id="kecamatan" onchange="loadDesa()" class="w-full border p-2 rounded-lg bg-white" disabled required>
+                        <option value="">Pilih Kecamatan...</option>
+                    </select>
+                    <select id="desa" class="w-full border p-2 rounded-lg bg-white" disabled required>
+                        <option value="">Pilih Desa/Kelurahan...</option>
+                    </select>
+                </div>
+                <input type="text" id="detail_alamat" placeholder="Isi Dusun dan RT/RW" required class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-upazgreen focus:outline-none">
+            </div>
+
+            <!-- 5. Peluang Kerja -->
+            <div>
+                <label class="block font-semibold mb-1">5. Apakah Anda Membuka Peluang Untuk Bekerja Di PT Dimensi Jaringan Bersinar (Upaznet) / Afiliasi?</label>
+                <select id="minatKerja" required class="w-full border p-3 rounded-lg bg-white focus:ring-2 focus:ring-upazgreen focus:outline-none mb-3">
+                    <option value="">Pilih...</option>
+                    <option value="Ya">Ya</option>
+                    <option value="Mungkin">Mungkin</option>
+                    <option value="Tidak">Tidak</option>
+                </select>
+                <input type="text" id="alasanKerja" placeholder="Tuliskan alasannya..." required class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-upazgreen focus:outline-none">
+            </div>
+
+            <!-- 6. Materi Menarik -->
+            <div>
+                <label class="block font-semibold mb-2">6. Dari ketiga materi yang disampaikan, mana yang paling menarik menurut Anda?</label>
+                <div class="space-y-2">
+                    <label class="flex items-center space-x-2"><input type="checkbox" name="materi" value="NOC" class="w-5 h-5"> <span>NOC (Network Operation Center)</span></label>
+                    <label class="flex items-center space-x-2"><input type="checkbox" name="materi" value="Teknisi" class="w-5 h-5"> <span>Teknisi Lapangan</span></label>
+                    <label class="flex items-center space-x-2"><input type="checkbox" name="materi" value="Sales Marketing" class="w-5 h-5"> <span>Sales Marketing</span></label>
+                </div>
+            </div>
+
+            <!-- 7. Upload Bukti -->
+            <div>
+                <label class="block font-semibold mb-1">7. Upload Screenshot Bukti Mengikuti Kegiatan (JPG/PNG)</label>
+                <input type="file" id="bukti" accept=".jpg, .jpeg, .png" required class="w-full border p-2 rounded-lg bg-white">
+                <p id="fileError" class="text-red-500 text-sm mt-1"></p>
+            </div>
+
+            <button type="submit" id="btnSubmit" class="w-full bg-upazblue hover:bg-blue-800 text-white font-bold py-3 rounded-xl transition duration-300">Submit & Dapatkan Sertifikat</button>
+        </form>
+
+        <div id="loading" class="hidden text-center mt-6">
+            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-upazgreen mx-auto mb-3"></div>
+            <p class="text-upazblue font-bold">Menyimpan data dan mencetak sertifikat...</p>
+        </div>
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwErMef1Y7De8mBKWfEzxN6nWERokqH0NKURNoz63sng8CT994glnlwZeuvaw2od_3y/exec";
+        const API_WILAYAH = "https://www.emsifa.com/api-wilayah-indonesia/api";
+
+        function capitalizeWords(input) {
+            input.value = input.value.replace(/\b\w/g, char => char.toUpperCase());
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            fetch(`${API_WILAYAH}/provinces.json`).then(res => res.json()).then(data => {
+                let opts = `<option value="">Pilih Provinsi...</option>`;
+                data.forEach(p => opts += `<option value="${p.id}">${p.name}</option>`);
+                document.getElementById('provinsi').innerHTML = opts;
+            });
+        });
+
+        function loadKota() {
+            let pid = document.getElementById('provinsi').value;
+            let kota = document.getElementById('kota');
+            if(!pid) return kota.disabled = true;
+            fetch(`${API_WILAYAH}/regencies/${pid}.json`).then(res => res.json()).then(data => {
+                let opts = `<option value="">Pilih Kota/Kabupaten...</option>`;
+                data.forEach(k => opts += `<option value="${k.id}">${k.name}</option>`);
+                kota.innerHTML = opts; kota.disabled = false;
+                document.getElementById('kecamatan').disabled = true; document.getElementById('desa').disabled = true;
+            });
+        }
+
+        function loadKecamatan() {
+            let kid = document.getElementById('kota').value;
+            let kec = document.getElementById('kecamatan');
+            fetch(`${API_WILAYAH}/districts/${kid}.json`).then(res => res.json()).then(data => {
+                let opts = `<option value="">Pilih Kecamatan...</option>`;
+                data.forEach(k => opts += `<option value="${k.id}">${k.name}</option>`);
+                kec.innerHTML = opts; kec.disabled = false; document.getElementById('desa').disabled = true;
+            });
+        }
+
+        function loadDesa() {
+            let kecid = document.getElementById('kecamatan').value;
+            let desa = document.getElementById('desa');
+            fetch(`${API_WILAYAH}/villages/${kecid}.json`).then(res => res.json()).then(data => {
+                let opts = `<option value="">Pilih Desa/Kelurahan...</option>`;
+                data.forEach(d => opts += `<option value="${d.id}">${d.name}</option>`);
+                desa.innerHTML = opts; desa.disabled = false;
+            });
+        }
+
+        document.getElementById('absensiForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            let fileInput = document.getElementById('bukti').files[0];
+            if(fileInput && fileInput.size > 2 * 1024 * 1024) return document.getElementById('fileError').innerText = "Maksimal ukuran gambar 2MB.";
+            
+            let materi = Array.from(document.querySelectorAll('input[name="materi"]:checked')).map(el => el.value);
+            if(materi.length === 0) return alert("Pilih minimal 1 materi menarik.");
+
+            document.getElementById('btnSubmit').classList.add('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+
+            let reader = new FileReader();
+            reader.readAsDataURL(fileInput);
+            reader.onload = async function () {
+                let payload = {
+                    namaLengkap: document.getElementById('nama').value,
+                    email: document.getElementById('email').value,
+                    asalSekolah: document.getElementById('sekolah').value,
+                    provinsi: document.getElementById('provinsi').options[document.getElementById('provinsi').selectedIndex].text,
+                    kota: document.getElementById('kota').options[document.getElementById('kota').selectedIndex].text,
+                    kecamatan: document.getElementById('kecamatan').options[document.getElementById('kecamatan').selectedIndex].text,
+                    desa: document.getElementById('desa').options[document.getElementById('desa').selectedIndex].text,
+                    detailAlamat: document.getElementById('detail_alamat').value,
+                    minatKerja: document.getElementById('minatKerja').value,
+                    alasanKerja: document.getElementById('alasanKerja').value,
+                    materiMenarik: materi.join(", "),
+                    fileBase64: reader.result.split(',')[1],
+                    fileType: fileInput.type
+                };
+
+                try {
+                    let response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+                    let res = await response.json();
+                    if(res.status === "success") { alert("Berhasil! Sertifikat telah dikirim ke email."); window.location.reload(); } 
+                    else { alert("Gagal: " + res.message); }
+                } catch(err) { alert("Terjadi kesalahan koneksi."); } finally {
+                    document.getElementById('btnSubmit').classList.remove('hidden');
+                    document.getElementById('loading').classList.add('hidden');
+                }
+            };
+        });
+    </script>
+</body>
+</html>
