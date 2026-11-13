@@ -12,11 +12,16 @@
 <body class="bg-gray-50 text-gray-800 font-sans p-4 md:p-8">
 
     <div class="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-lg border-t-8 border-upazblue">
+        <!-- Bagian Header (Tetap Tampil di Halaman Form maupun Berhasil) -->
         <div class="text-center mb-8">
+            <!-- Menampilkan Logo dari Google Drive -->
+            <img src="https://drive.google.com/uc?export=view&id=1vR5j0wMWV8JEW8ihkQh0zlnn0WQkjrYF" alt="Logo Upaznet" class="h-16 mx-auto mb-4 object-contain">
+            
             <h1 class="text-2xl md:text-3xl font-bold text-upazblue mb-2">Absensi Kegiatan Webinar & Sertifikat</h1>
             <p class="text-upazgreen font-semibold text-lg">ISP Industry Career Preparation</p>
         </div>
 
+        <!-- Bagian Form Pengisian -->
         <form id="absensiForm" class="space-y-6">
             <!-- 1. Nama Lengkap -->
             <div>
@@ -88,9 +93,35 @@
             <button type="submit" id="btnSubmit" class="w-full bg-upazblue hover:bg-blue-800 text-white font-bold py-3 rounded-xl transition duration-300">Submit & Dapatkan Sertifikat</button>
         </form>
 
+        <!-- Indikator Loading -->
         <div id="loading" class="hidden text-center mt-6">
             <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-upazgreen mx-auto mb-3"></div>
             <p class="text-upazblue font-bold">Menyimpan data dan mencetak sertifikat...</p>
+        </div>
+
+        <!-- Halaman Bukti Berhasil (Awalnya Disembunyikan) -->
+        <div id="successSection" class="hidden space-y-6 mt-4">
+            <div class="bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-xl text-center shadow-sm">
+                <svg class="w-12 h-12 mx-auto mb-2 text-upazgreen" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <p class="font-bold text-lg">Berhasil! Sertifikat telah dikirim ke email pengiriman.</p>
+            </div>
+            
+            <div class="bg-gray-50 border rounded-xl p-6 space-y-4">
+                <div class="border-b pb-3">
+                    <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Nama Lengkap (Sertifikat)</p>
+                    <p class="text-lg font-bold text-upazblue" id="resNamaLengkap"></p>
+                </div>
+                <div class="border-b pb-3">
+                    <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Alamat Email</p>
+                    <p class="text-md font-semibold text-gray-800" id="resEmail"></p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Alamat Domisili</p>
+                    <p class="text-sm text-gray-700 leading-relaxed" id="resAlamatDomisili"></p>
+                </div>
+            </div>
+            
+            <button onclick="window.location.reload()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-xl transition duration-300">Kembali ke Form Awal</button>
         </div>
     </div>
 
@@ -150,6 +181,7 @@
             let materi = Array.from(document.querySelectorAll('input[name="materi"]:checked')).map(el => el.value);
             if(materi.length === 0) return alert("Pilih minimal 1 materi menarik.");
 
+            // Tampilkan Loading, Sembunyikan Tombol Submit
             document.getElementById('btnSubmit').classList.add('hidden');
             document.getElementById('loading').classList.remove('hidden');
 
@@ -175,9 +207,29 @@
                 try {
                     let response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
                     let res = await response.json();
-                    if(res.status === "success") { alert("Berhasil! Sertifikat telah dikirim ke email."); window.location.reload(); } 
-                    else { alert("Gagal: " + res.message); }
-                } catch(err) { alert("Terjadi kesalahan koneksi."); } finally {
+                    
+                    if(res.status === "success") { 
+                        // Sembunyikan Form & Loading
+                        document.getElementById('absensiForm').classList.add('hidden');
+                        document.getElementById('loading').classList.add('hidden');
+                        
+                        // Masukkan Data ke Halaman Bukti Berhasil
+                        document.getElementById('resNamaLengkap').innerText = payload.namaLengkap;
+                        document.getElementById('resEmail').innerText = payload.email;
+                        document.getElementById('resAlamatDomisili').innerText = `${payload.detailAlamat}, Desa/Kel. ${payload.desa}, Kec. ${payload.kecamatan}, Kab/Kota. ${payload.kota}, Prov. ${payload.provinsi}`;
+                        
+                        // Tampilkan Halaman Bukti Berhasil
+                        document.getElementById('successSection').classList.remove('hidden');
+                        
+                        // Scroll otomatis ke paling atas
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    } else { 
+                        alert("Gagal: " + res.message); 
+                        document.getElementById('btnSubmit').classList.remove('hidden');
+                        document.getElementById('loading').classList.add('hidden');
+                    }
+                } catch(err) { 
+                    alert("Terjadi kesalahan koneksi."); 
                     document.getElementById('btnSubmit').classList.remove('hidden');
                     document.getElementById('loading').classList.add('hidden');
                 }
